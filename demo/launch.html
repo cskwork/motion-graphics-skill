@@ -1,0 +1,221 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Launch video demo</title>
+<script>window.MG_CONFIG = window.MG_CONFIG || { size: [1920, 1080], fps: 60, duration: 12 };</script>
+<link rel="stylesheet" href="../assets/fonts/fonts.css">
+<link rel="stylesheet" href="../skills/motion-graphics/engine/runtime.css">
+<script src="../skills/motion-graphics/engine/runtime.js"></script>
+<style>
+  :root { --ink: #eceae4; --bg: #101010; --red: #e2311d; --amber: #f0a332; --dim: #8d8a82; --card: #1a1a19; }
+  body { background: var(--bg); color: var(--ink); font-family: "Sofia Sans", sans-serif; }
+  .lv-stage { position: absolute; inset: 0; perspective: 1800px; }
+  .lv-grain { position: absolute; inset: 0; opacity: .07; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .lv-display { font-family: "Sofia Sans Extra Condensed", sans-serif; font-weight: 850; text-transform: uppercase;
+    line-height: .86; letter-spacing: -.01em; white-space: nowrap; }
+  .lv-mono { font-family: "JetBrains Mono", monospace; }
+  .lv-rec { position: absolute; left: 96px; top: 72px; display: flex; gap: 18px; align-items: center;
+    font-size: 26px; letter-spacing: .12em; color: var(--dim); }
+  .lv-rec i { width: 18px; height: 18px; border-radius: 50%; background: var(--red); display: block; }
+
+  .lv-hook { position: absolute; left: 150px; top: 300px; transform-origin: 0 50%; }
+  .lv-hook-a { font-size: 250px; }
+  .lv-hook-mask { overflow: hidden; padding-bottom: 12px; margin-top: 6px; }
+  .lv-hook-b { font-size: 250px; color: var(--red); display: block; }
+
+  .lv-term { position: absolute; left: 700px; top: 360px; width: 1060px;
+    background: var(--card); border-radius: 24px;
+    box-shadow: 0 40px 70px -30px rgba(0,0,0,.8); padding: 44px 52px; transform-style: preserve-3d; }
+  .lv-term-line { font-size: 40px; line-height: 1.5; white-space: pre; }
+  .lv-term-line .lv-p { color: var(--red); }
+  .lv-term-ok { color: var(--amber); }
+  .lv-caret { display: inline-block; width: 22px; height: 46px; background: var(--ink); vertical-align: -8px; margin-left: 4px; }
+  .lv-side { position: absolute; left: 150px; top: 390px; font-size: 150px; }
+
+  .lv-code { position: absolute; left: 150px; top: 290px; width: 900px; padding: 44px 50px;
+    background: var(--card); border-radius: 24px; font-size: 32px; line-height: 1.6; }
+  .lv-code div { white-space: pre; border-radius: 8px; padding: 0 14px; margin: 0 -14px; }
+  .lv-code .lv-k { color: var(--red); }
+  .lv-code .lv-c { color: var(--dim); }
+  .lv-target { position: absolute; left: 1300px; top: 330px; width: 380px; height: 380px; border-radius: 44px;
+    background: var(--red); display: grid; place-items: center; color: var(--bg); font-size: 56px; font-weight: 600; }
+  .lv-track { position: absolute; left: 150px; right: 150px; top: 880px; height: 4px; background: #2c2b27; }
+  .lv-head { position: absolute; top: -22px; width: 4px; height: 48px; background: var(--red); }
+  .lv-tick { position: absolute; top: 18px; font-size: 22px; color: var(--dim); transform: translateX(-50%); }
+  .lv-cap { position: absolute; left: 150px; top: 150px; font-size: 92px; }
+
+  .lv-strip { position: absolute; left: 0; top: 380px; display: flex; gap: 28px; }
+  .lv-frame { width: 360px; height: 203px; border-radius: 16px; background: var(--card); border: 2px solid #2c2b27;
+    position: relative; overflow: hidden; flex: none; }
+  .lv-frame i { position: absolute; width: 46px; height: 46px; border-radius: 50%; background: var(--red); top: 78px; }
+  .lv-count { position: absolute; left: 150px; top: 700px; font-size: 120px; font-weight: 600; font-feature-settings: "tnum"; }
+  .lv-count small { font-size: 40px; color: var(--dim); margin-left: 24px; letter-spacing: .08em; }
+  .lv-done { position: absolute; left: 150px; top: 880px; font-size: 44px; color: var(--amber); }
+
+  .lv-lock { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; }
+  .lv-lock-word { font-size: 260px; }
+  .lv-lock-word .lv-dash { color: var(--red); }
+  .lv-lock-cmd { margin-top: 40px; font-size: 40px; color: var(--dim); }
+  .lv-lock-tags { margin-top: 22px; font-size: 30px; letter-spacing: .3em; text-transform: uppercase; }
+</style>
+</head>
+<body>
+<div class="lv-stage">
+
+  <div class="lv-hook" id="hook">
+    <div class="lv-display lv-hook-a" id="hookA">Launch videos,</div>
+    <div class="lv-hook-mask"><span class="lv-display lv-hook-b" id="hookB">written as code.</span></div>
+  </div>
+
+  <div id="s2">
+    <div class="lv-display lv-side" id="side">One<br>install.</div>
+    <div class="lv-term lv-mono" id="term">
+      <div class="lv-term-line"><span class="lv-p">$ </span><span id="typed"></span><span class="lv-caret" id="caret"></span></div>
+      <div class="lv-term-line lv-term-ok" id="ok1">✓ motion-graphics</div>
+      <div class="lv-term-line" id="ok2" style="color:var(--dim)">  → Claude Code · Codex · any agent</div>
+    </div>
+  </div>
+
+  <div id="s3">
+    <div class="lv-display lv-cap" id="cap3">Every frame is a function of t.</div>
+    <div class="lv-code lv-mono" id="code">
+      <div id="c1"><span class="lv-k">MG.scene</span>(0, 3, (t) =&gt; {</div>
+      <div id="c2">  <span class="lv-k">MG.set</span>(card, {</div>
+      <div id="c3">    s: MG.spring(t),</div>
+      <div id="c4">    r: MG.tween(t, [[0, -12], [1.2, 0]]),</div>
+      <div id="c5">  });</div>
+      <div id="c6">});  <span class="lv-c">// no clock, no randomness</span></div>
+    </div>
+    <div class="lv-target lv-mono" id="target">t = 0.00</div>
+    <div class="lv-track" id="track"><div class="lv-head" id="head"></div></div>
+  </div>
+
+  <div id="s4">
+    <div class="lv-display lv-cap" id="cap4">Rendered frame by frame.</div>
+    <div class="lv-strip" id="strip"></div>
+    <div class="lv-count lv-mono" id="count">0<small>/ 720 FRAMES</small></div>
+    <div class="lv-done lv-mono" id="done">✓ out/video.mp4 · 1920×1080 · 60 fps</div>
+  </div>
+
+  <div class="lv-lock" id="lock">
+    <div>
+      <div class="lv-display lv-lock-word" id="word">motion<span class="lv-dash">-</span>graphics</div>
+      <div class="lv-mono lv-lock-cmd" id="cmd">npx skills add cskwork/motion-graphics-skill</div>
+      <div class="lv-mono lv-lock-tags" id="tags">Launch videos · Shorts</div>
+    </div>
+  </div>
+
+  <div class="lv-grain"></div>
+  <div class="lv-rec lv-mono"><i id="dot"></i><span id="tc">00:00:00:00</span></div>
+</div>
+<script>
+  const $ = (s) => document.getElementById(s);
+  const { prog, spring, tween, set, ease } = MG;
+  const slam = (t, k = 420) => spring(t, { stiffness: k, damping: 1.2 * Math.sqrt(k) });
+  const glide = (t, k = 160) => spring(t, { stiffness: k, damping: 1.75 * Math.sqrt(k) });
+  const pad = (n, w = 2) => String(n).padStart(w, "0");
+
+  // Background, timecode, tally light.
+  MG.always((t) => {
+    const f = Math.floor(t * 60);
+    $("tc").textContent = `00:00:${pad(Math.floor(t))}:${pad(f % 60)}`;
+    $("dot").style.opacity = Math.floor(t * 2) % 2 ? 0.25 : 1;
+  });
+
+  // 1. Hook (already moving on frame 0).
+  const hookChars = MG.split($("hookA"));
+  MG.scene(0, 2.45, (l) => {
+    const t = l + 0.18;
+    hookChars.forEach((c, i) => {
+      const p = slam(t - i * 0.028);
+      set(c, { y: (1 - p) * 170, o: prog(t, i * 0.028, i * 0.028 + 0.12) });
+    });
+    set($("hookB"), { y: (1 - prog(t, 0.55, 1.15, "outExpo")) * 280 });
+    const out = prog(l, 2.1, 2.45, "inCubic");
+    set($("hook"), { s: 1 + l * 0.02, y: -out * 260, o: 1 - out, blur: out * 18 });
+  }, $("hook"));
+
+  // 2. Install in a 3D terminal.
+  const cmd = "npx skills add cskwork/motion-graphics-skill";
+  MG.scene(2.35, 5.15, (l) => {
+    const inn = glide(l, 140);
+    const out = prog(l, 2.5, 2.8, "inCubic");
+    const ry = -30 + inn * 22 + Math.sin(l * 0.9) * 2;
+    const rx = 12 - inn * 7;
+    $("term").style.transform =
+      `translate(${out * -1500}px, ${(1 - inn) * 420}px) rotateY(${ry}deg) rotateX(${rx}deg) translateZ(${-120 + inn * 120}px)`;
+    $("term").style.opacity = MG.clamp(inn * 1.4);
+    $("term").style.filter = out > 0.01 ? `blur(${out * 20}px)` : "none";
+    const n = Math.round(cmd.length * prog(l, 0.35, 1.45));
+    $("typed").textContent = cmd.slice(0, n);
+    $("caret").style.opacity = n < cmd.length || Math.floor(l * 2.5) % 2 ? 1 : 0;
+    const ok = slam(l - 1.6, 380);
+    set($("ok1"), { x: (1 - ok) * 60, o: prog(l, 1.6, 1.75) });
+    set($("ok2"), { x: (1 - slam(l - 1.75, 380)) * 60, o: prog(l, 1.75, 1.9) });
+    const side = slam(l - 0.25, 300);
+    set($("side"), { x: (1 - side) * -260 - out * 1500, o: prog(l, 0.25, 0.45) * (1 - out), blur: out * 20 });
+  }, $("s2"));
+
+  // 3. The code on the left drives the card on the right.
+  const lines = ["c1", "c2", "c3", "c4", "c5", "c6"].map($);
+  MG.scene(5.05, 8.25, (l) => {
+    const inn = slam(l, 300);
+    set($("cap3"), { y: (1 - inn) * -120, o: prog(l, 0, 0.2) });
+    set($("code"), { x: (1 - glide(l - 0.08, 200)) * -500, o: prog(l, 0.08, 0.3) });
+    const lt = MG.clamp(l - 0.35, 0, 3);
+    const live = l >= 0.35;
+    const s = live ? spring(lt, { stiffness: 170, damping: 12 }) : 0;
+    const r = tween(lt, [[0, -12], [1.2, 0, "outCubic"]]);
+    $("target").style.transform = `rotate(${r}deg) scale(${s})`;
+    $("target").textContent = `t = ${lt.toFixed(2)}`;
+    const hl = lt < 0.15 ? 0 : lt < 0.5 ? 1 : lt < 1.1 ? 2 : lt < 1.8 ? 3 : lt < 2.4 ? 4 : 5;
+    lines.forEach((el, i) => (el.style.background = i === hl && live ? "rgba(240,163,50,.18)" : "transparent"));
+    $("head").style.left = `${(lt / 3) * 100}%`;
+    set($("track"), { o: prog(l, 0.2, 0.4) });
+    const out = prog(l, 2.9, 3.2, "inCubic");
+    set($("s3"), { y: out * -300, o: 1 - out, blur: out * 16 });
+  }, $("s3"));
+  for (let i = 0; i <= 3; i++) {
+    MG.el("div", { class: "lv-tick lv-mono", text: `${i}s`, style: { left: `${(i / 3) * 100}%` } }, $("track"));
+  }
+
+  // 4. Film strip racing past, frame counter, output.
+  const frames = [...Array(16).keys()].map((i) => {
+    const f = MG.el("div", { class: "lv-frame" }, $("strip"));
+    const dot = MG.el("i", {}, f);
+    dot.style.left = `${30 + (i % 8) * 36}px`;
+    dot.style.top = `${78 + Math.sin(i * 0.8) * 50}px`;
+    return f;
+  });
+  MG.scene(8.15, 10.55, (l) => {
+    set($("cap4"), { y: (1 - slam(l, 300)) * -120, o: prog(l, 0, 0.2) });
+    const travel = tween(l, [[0, 1920], [1.6, -3300, "outQuart"], [2.4, -3460]]);
+    const v = Math.abs(tween(l + 0.03, [[0, 1920], [1.6, -3300, "outQuart"], [2.4, -3460]]) - travel);
+    set($("strip"), { x: travel, blur: Math.min(v * 0.08, 10) });
+    frames.forEach((f, i) => (f.style.borderColor = i === 9 && l > 1.5 ? "var(--red)" : "#2c2b27"));
+    const n = Math.round(720 * prog(l, 0.2, 1.7, "linear"));
+    $("count").firstChild.textContent = MG.fmt(n);
+    set($("count"), { o: prog(l, 0.15, 0.3) });
+    set($("done"), { x: (1 - slam(l - 1.75)) * 80, o: prog(l, 1.75, 1.9) });
+    const out = prog(l, 2.1, 2.4, "inCubic");
+    set($("s4"), { s: 1 - out * 0.1, o: 1 - out, blur: out * 14 });
+  }, $("s4"));
+
+  // 5. Lockup.
+  const wordChars = MG.split($("word"));
+  MG.scene(10.45, 12.01, (l) => {
+    wordChars.forEach((c, i) => {
+      const p = slam(l - i * 0.025, 360);
+      set(c, { y: (1 - p) * 140, o: prog(l, i * 0.025, i * 0.025 + 0.12) });
+    });
+    set($("cmd"), { y: (1 - glide(l - 0.45, 200)) * 40, o: prog(l, 0.45, 0.65) });
+    set($("tags"), { o: prog(l, 0.7, 0.9) });
+    set($("lock"), { s: 1 + l * 0.02 });
+  }, $("lock"));
+
+  MG.ready();
+</script>
+</body>
+</html>

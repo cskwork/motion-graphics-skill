@@ -2,6 +2,8 @@
 
 An agent skill that makes motion-graphics videos in code: product launch videos built from your real running app, and vertical shorts for YouTube Shorts, Reels, and TikTok. Works with Claude Code, Codex, and any agent that reads `SKILL.md`.
 
+**Landing page:** https://cskwork.github.io/motion-graphics-skill/ (the demos there run live on the skill's own engine)
+
 한국어 요약은 [아래](#한국어-요약)에 있습니다.
 
 ## Install
