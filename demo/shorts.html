@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shorts demo</title>
+<script>window.MG_CONFIG = window.MG_CONFIG || { size: [1080, 1920], fps: 60, duration: 12 };</script>
+<link rel="stylesheet" href="../assets/fonts/fonts.css">
+<link rel="stylesheet" href="../skills/motion-graphics/engine/runtime.css">
+<script src="../skills/motion-graphics/engine/runtime.js"></script>
+<style>
+  :root { --ink: #eceae4; --bg: #101010; --red: #e2311d; --amber: #f0a332; --dim: #8d8a82; --card: #1a1a19; }
+  body { background: var(--bg); color: var(--ink); font-family: "Sofia Sans", sans-serif; }
+  .sh-grain { position: absolute; inset: 0; opacity: .07; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+  .sh-d { font-family: "Sofia Sans Extra Condensed", sans-serif; font-weight: 850; text-transform: uppercase;
+    line-height: .86; white-space: nowrap; }
+  .sh-m { font-family: "JetBrains Mono", monospace; }
+  .sh-rec { position: absolute; left: 80px; top: 262px; display: flex; gap: 16px; align-items: center;
+    font-size: 30px; letter-spacing: .12em; color: var(--dim); }
+  .sh-rec i { width: 20px; height: 20px; border-radius: 50%; background: var(--red); display: block; }
+
+  .sh-a { position: absolute; left: 80px; top: 420px; }
+  .sh-num { font-size: 540px; color: var(--red); transform-origin: 0 80%; display: block; }
+  .sh-a-mask { overflow: hidden; }
+  .sh-word { font-size: 200px; display: block; }
+  .sh-sub { margin-top: 40px; font-size: 58px; font-weight: 600; color: var(--dim); }
+
+  .sh-b-cap { position: absolute; left: 80px; top: 400px; font-size: 140px; }
+  .sh-t { position: absolute; left: 80px; top: 780px; font-size: 150px; font-weight: 700; font-feature-settings: "tnum"; }
+  .sh-t small { color: var(--amber); }
+  .sh-path { position: absolute; left: 80px; top: 1060px; width: 820px; height: 320px;
+    border-top: 2px dashed #2f2e2b; border-bottom: 2px dashed #2f2e2b; }
+  .sh-dot { position: absolute; width: 64px; height: 64px; border-radius: 50%; background: var(--red); margin: -32px 0 0 -32px; }
+  .sh-ghost { position: absolute; width: 22px; height: 22px; border-radius: 50%; background: var(--amber); margin: -11px 0 0 -11px; }
+
+  .sh-c-cap { position: absolute; left: 80px; top: 360px; font-size: 128px; }
+  .sh-frame { position: absolute; left: 80px; width: 820px; height: 300px; border-radius: 26px; background: var(--card);
+    border: 2px solid #2f2e2b; overflow: hidden; }
+  .sh-frame b { position: absolute; left: 32px; top: 24px; font-size: 30px; font-weight: 400; color: var(--dim); }
+  .sh-frame i { position: absolute; width: 84px; height: 84px; border-radius: 50%; background: var(--red); left: 520px; top: 150px; }
+  .sh-frame span { position: absolute; left: 32px; bottom: 24px; font-size: 30px; color: var(--amber); }
+  .sh-eq { position: absolute; left: 80px; top: 1010px; display: flex; align-items: center; gap: 30px; font-size: 92px; }
+  .sh-check { width: 92px; height: 92px; border-radius: 50%; background: var(--amber); position: relative; }
+  .sh-check::after { content: ""; position: absolute; left: 30px; top: 18px; width: 24px; height: 44px;
+    border: solid var(--bg); border-width: 0 12px 12px 0; transform: rotate(45deg); }
+
+  .sh-d-words { position: absolute; left: 80px; top: 430px; }
+  .sh-d-words div { font-size: 190px; }
+  .sh-d-words div:nth-child(even) { color: var(--amber); }
+</style>
+</head>
+<body>
+
+<div class="sh-a" id="a">
+  <div class="sh-d sh-num" id="num">720</div>
+  <div class="sh-a-mask"><span class="sh-d sh-word" id="word">screenshots</span></div>
+  <div class="sh-sub" id="sub">make one 12-second video.</div>
+</div>
+
+<div id="b">
+  <div class="sh-d sh-b-cap" id="bcap">Every frame<br>is a function of</div>
+  <div class="sh-m sh-t" id="tval">t = <small id="tnum">0.000</small></div>
+  <div class="sh-path" id="path"></div>
+</div>
+
+<div id="c">
+  <div class="sh-d sh-c-cap" id="ccap">Same t.<br>Same pixels.</div>
+  <div class="sh-frame" id="f1" style="top:660px"><b class="sh-m">render 1</b><i></i><span class="sh-m">t = 6.400</span></div>
+  <div class="sh-frame" id="f2" style="top:1000px"><b class="sh-m">render 2</b><i></i><span class="sh-m">t = 6.400</span></div>
+  <div class="sh-eq sh-d" id="eq" style="top:1340px"><div class="sh-check" id="check"></div>identical</div>
+</div>
+
+<div class="sh-d-words" id="d">
+  <div class="sh-d" id="w1">So an agent</div>
+  <div class="sh-d" id="w2">can direct</div>
+  <div class="sh-d" id="w3">the whole</div>
+  <div class="sh-d" id="w4">edit.</div>
+</div>
+
+<div class="sh-grain"></div>
+<div class="sh-rec sh-m"><i id="dot"></i><span id="tc">00:00:00:00</span></div>
+<script>
+  const $ = (s) => document.getElementById(s);
+  const { prog, spring, set } = MG;
+  const slam = (t, k = 420) => spring(t, { stiffness: k, damping: 1.2 * Math.sqrt(k) });
+  const glide = (t, k = 160) => spring(t, { stiffness: k, damping: 1.75 * Math.sqrt(k) });
+  const pad = (n) => String(n).padStart(2, "0");
+
+  MG.always((t) => {
+    $("tc").textContent = `00:00:${pad(Math.floor(t))}:${pad(Math.floor(t * 60) % 60)}`;
+    $("dot").style.opacity = Math.floor(t * 2) % 2 ? 0.25 : 1;
+  });
+
+  // Hook. Drawn from one place so the last frames can rebuild the first and the Short loops.
+  const drawA = (l) => {
+    const t = l + 0.14;
+    const p = slam(t, 380);
+    set($("num"), { s: 1.14 - 0.14 * p, o: prog(t, 0, 0.08) });
+    set($("word"), { y: (1 - prog(t, 0.45, 1.0, "outExpo")) * 230 });
+    set($("sub"), { y: (1 - glide(t - 0.9, 200)) * 50, o: prog(t, 0.9, 1.1) });
+  };
+  MG.always((t) => {
+    let l = null;
+    if (t < 2.6) l = t;
+    else if (t >= 11.7) l = t - 12;
+    $("a").style.visibility = l === null ? "hidden" : "visible";
+    if (l === null) return;
+    drawA(l);
+    const out = t < 2.6 ? prog(t, 2.3, 2.6, "inCubic") : 0;
+    set($("a"), { y: -out * 300, o: 1 - out, blur: out * 18 });
+  });
+
+  // Every frame is a function of t.
+  const ghosts = [...Array(12)].map(() => MG.el("div", { class: "sh-ghost" }, $("path")));
+  const dot = MG.el("div", { class: "sh-dot" }, $("path"));
+  const pos = (t) => [((t * 260) % 820), 160 + Math.sin(t * 3.2) * 120];
+  MG.scene(2.5, 5.35, (l, t) => {
+    set($("bcap"), { y: (1 - slam(l, 320)) * -140, o: prog(l, 0, 0.2) });
+    set($("tval"), { x: (1 - glide(l - 0.15, 220)) * -300, o: prog(l, 0.15, 0.35) });
+    $("tnum").textContent = t.toFixed(3);
+    const [x, y] = pos(l);
+    set(dot, { x, y, s: slam(l - 0.3) });
+    ghosts.forEach((g, i) => {
+      const tg = l - (i + 1) * 0.09;
+      const [gx, gy] = pos(Math.max(0, tg));
+      set(g, { x: gx, y: gy, o: tg > 0.3 ? 0.6 * (1 - i / 12) : 0 });
+    });
+    set($("path"), { o: prog(l, 0.25, 0.45) });
+    const out = prog(l, 2.55, 2.85, "inCubic");
+    set($("b"), { x: out * -1100, o: 1 - out, blur: out * 18 });
+  }, $("b"));
+
+  // Same t, same pixels.
+  MG.scene(5.25, 8.05, (l) => {
+    set($("ccap"), { y: (1 - slam(l, 320)) * -140, o: prog(l, 0, 0.2) });
+    set($("f1"), { x: (1 - glide(l - 0.25, 200)) * -900 });
+    set($("f2"), { x: (1 - glide(l - 0.45, 200)) * 900 });
+    const hit = slam(l - 1.25, 460);
+    set($("eq"), { o: prog(l, 1.25, 1.35) });
+    set($("check"), { s: hit });
+    const flash = Math.max(0, 1 - Math.abs(l - 1.3) * 5);
+    ["f1", "f2"].forEach((id) => ($(id).style.borderColor = flash > 0.05 ? `rgba(240,163,50,${flash})` : "#2f2e2b"));
+    const out = prog(l, 2.5, 2.8, "inCubic");
+    set($("c"), { y: out * -400, o: 1 - out, blur: out * 18 });
+  }, $("c"));
+
+  // So an agent can direct the whole edit.
+  const words = ["w1", "w2", "w3", "w4"].map($);
+  MG.scene(7.95, 11.75, (l) => {
+    words.forEach((w, i) => {
+      const at = i * 0.32;
+      set(w, { x: (1 - slam(l - at, 360)) * -700, o: prog(l, at, at + 0.1) });
+    });
+    set($("d"), { s: 1 + l * 0.012 });
+    const out = prog(l, 3.35, 3.75, "inCubic");
+    set($("d"), { y: out * 260, o: 1 - out, blur: out * 18, s: 1 + l * 0.012 });
+  }, $("d"));
+
+  MG.ready();
+</script>
+</body>
+</html>

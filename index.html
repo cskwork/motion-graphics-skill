@@ -1,0 +1,648 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>motion-graphics: launch videos and Shorts, written as code</title>
+<meta name="description" content="An agent skill for Claude Code, Codex, and any agent: turn your running app into a keynote-style launch video, or an idea into a YouTube Short. Every frame is HTML rendered at a time t.">
+<meta property="og:title" content="motion-graphics: launch videos and Shorts, written as code">
+<meta property="og:description" content="An agent skill that renders motion-graphics videos frame by frame from HTML. Launch videos from real app captures, and vertical Shorts.">
+<meta property="og:image" content="https://cskwork.github.io/motion-graphics-skill/assets/og.jpg">
+<meta property="og:url" content="https://cskwork.github.io/motion-graphics-skill/">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="preload" href="assets/fonts/sofia-sans-extra-condensed.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="assets/fonts/fonts.css">
+<style>
+  :root {
+    --paper: #e5e8e9;
+    --paper-hi: #f3f5f6;
+    --paper-lo: #d1d6d8;
+    --ink: #151718;
+    --ink-2: #464b4e;
+    --rebate: #131313;
+    --rebate-2: #222220;
+    --hole: #34342f;
+    --edge: #f0a332;
+    --grease: #c8271a;
+    --display: "Sofia Sans Extra Condensed", "Arial Narrow", sans-serif;
+    --body: "Sofia Sans", system-ui, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, monospace;
+    --hand: "Covered By Your Grace", cursive;
+    --gutter: clamp(20px, 4vw, 64px);
+    --ease-out: cubic-bezier(.16, 1, .3, 1);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { background: var(--paper); color: var(--ink); scroll-behavior: smooth; scrollbar-color: var(--ink-2) var(--paper-lo); }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body {
+    font: 400 1.0625rem/1.6 var(--body);
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .3 0 0 0 0 .33 0 0 0 0 .36 0 0 0 .11 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E"),
+      var(--paper);
+    -webkit-font-smoothing: antialiased;
+    caret-color: var(--grease);
+    overflow-x: hidden;
+  }
+  ::selection { background: var(--edge); color: var(--rebate); }
+  a { color: inherit; text-decoration-thickness: 1px; text-underline-offset: .22em; }
+  a:hover { color: var(--grease); }
+  :focus-visible { outline: 2px solid var(--grease); outline-offset: 3px; border-radius: 3px; }
+  .wrap { width: min(1360px, 100% - 2 * var(--gutter)); margin-inline: auto; }
+  .display { font-family: var(--display); font-weight: 850; text-transform: uppercase; line-height: .9; letter-spacing: -.005em; text-wrap: balance; }
+  .hand { font-family: var(--hand); color: var(--grease); font-weight: 400; line-height: 1.3; }
+  .edge { font-family: var(--display); font-weight: 650; text-transform: uppercase; letter-spacing: .16em; font-size: 12px; color: var(--edge); font-feature-settings: "tnum"; }
+  .tri { display: inline-block; width: 7px; height: 9px; background: var(--edge); clip-path: polygon(0 0, 100% 50%, 0 100%); }
+
+  /* Header */
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-block: 22px; }
+  .mark { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-weight: 850; font-size: 26px; text-transform: uppercase; text-decoration: none; letter-spacing: .01em; }
+  .mark svg { width: 30px; height: 30px; }
+  .top nav { display: flex; gap: clamp(14px, 2.4vw, 32px); font-weight: 600; font-size: 15px; }
+
+  /* Hero */
+  .hero { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(28px, 4vw, 72px); align-items: center; padding-block: clamp(12px, 3vh, 40px) clamp(56px, 9vh, 112px); }
+  .hero-copy { position: relative; }
+  .hero h1 { font-size: clamp(3.5rem, 6.6vw, 6rem); }
+  .hero h1 em { font-style: normal; color: var(--grease); }
+  .lede { margin-top: 26px; max-width: 34em; font-size: clamp(1.0625rem, 1.25vw, 1.1875rem); color: var(--ink-2); }
+  .lede strong { color: var(--ink); font-weight: 600; }
+  .install { margin-top: 30px; display: flex; align-items: stretch; background: var(--rebate); border-radius: 6px; box-shadow: 0 10px 24px -14px rgba(0,0,0,.6); max-width: 560px; }
+  .install code { flex: 1; min-width: 0; padding: 15px 18px; color: var(--paper-hi); font: 500 clamp(13px, 1.02vw, 15px)/1.55 var(--mono); overflow-wrap: anywhere; }
+  .install code span { color: var(--edge); }
+  .copy { flex: none; display: flex; align-items: center; gap: 8px; padding: 0 18px; border: 0; border-left: 1px solid var(--rebate-2); background: none; color: var(--edge); font: 700 13px/1 var(--display); letter-spacing: .16em; text-transform: uppercase; cursor: pointer; border-radius: 0 6px 6px 0; transition: background .2s var(--ease-out), color .2s var(--ease-out); }
+  .copy:hover { background: var(--edge); color: var(--rebate); }
+  .copy svg { width: 15px; height: 15px; }
+  .copy[data-done] { color: var(--paper-hi); }
+  .agents { margin-top: 14px; font-size: 15px; color: var(--ink-2); }
+  .note { position: absolute; font-size: clamp(1.25rem, 1.6vw, 1.5rem); transform: rotate(-4deg); pointer-events: none; }
+  .note-hero { left: 4px; top: calc(100% + 30px); width: 14em; }
+  .note-hero svg { position: absolute; left: -190px; top: -70px; width: 180px; height: 90px; overflow: visible; }
+
+  /* Contact sheet */
+  .sheet { --d: clamp(150px, 19vw, 300px); position: relative; display: grid; gap: clamp(10px, 1.3vw, 18px); touch-action: pan-y; }
+  .strip { background: var(--rebate); padding: 0 clamp(6px, .8vw, 12px); transform: rotate(var(--tilt, 0deg)); box-shadow: 0 2px 2px rgba(0,0,0,.18), 0 14px 26px -16px rgba(0,0,0,.55); }
+  .strip::before, .strip::after { content: ""; display: block; height: 7px; margin-inline: 4px; background: repeating-linear-gradient(90deg, var(--hole) 0 9px, transparent 9px 19px); border-radius: 1px; }
+  .strip::before { margin-top: 5px; }
+  .strip::after { margin-bottom: 5px; }
+  .edge-row { column-gap: clamp(3px, .5vw, 7px); padding: 4px 2px; }
+  .edge-row > span { display: flex; align-items: center; gap: 6px; white-space: nowrap; overflow: hidden; }
+  .frames, .edge-row { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: clamp(3px, .5vw, 7px); }
+  .frame { position: relative; aspect-ratio: 16 / 9; background: #0a0a0a; cursor: zoom-in; }
+  .frame img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .frame:focus-visible { outline-color: var(--edge); }
+  .keeper { position: absolute; left: 0; top: 0; width: calc(var(--d) * 1.18); height: calc(var(--d) * 1.18); z-index: 6; pointer-events: none; }
+  .keeper svg { width: 100%; height: 100%; overflow: visible; }
+  .draw path { fill: none; stroke: var(--grease); stroke-linecap: round; stroke-linejoin: round; filter: url(#wax); }
+  .keeper .hand { position: absolute; left: -6%; bottom: -10%; font-size: clamp(1.2rem, 1.6vw, 1.6rem); transform: rotate(-7deg); }
+
+  .loupe { position: absolute; left: 0; top: 0; width: var(--d); height: var(--d); z-index: 5; pointer-events: none; will-change: transform; }
+  .lens { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; background: #0a0a0a;
+    box-shadow: 0 0 0 3px var(--rebate), 0 22px 40px -12px rgba(0,0,0,.55); }
+  .lens iframe { position: absolute; border: 0; width: 1920px; height: 1080px; transform-origin: 0 0; pointer-events: none; }
+  .loupe .edge { position: absolute; left: 50%; top: calc(100% + 16px); transform: translateX(-50%); background: var(--rebate); padding: 4px 8px; border-radius: 3px; white-space: nowrap; }
+  .sheet-ctl { position: absolute; right: 0; bottom: calc(100% + 10px); display: flex; gap: 8px; align-items: center; }
+
+  .pill { display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px; border-radius: 4px; border: 0; background: var(--rebate); color: var(--edge); font: 700 12px/1 var(--display); letter-spacing: .16em; text-transform: uppercase; cursor: pointer; transition: background .2s var(--ease-out), color .2s var(--ease-out); }
+  .pill:hover { background: var(--edge); color: var(--rebate); }
+  .pill svg { width: 12px; height: 12px; }
+
+  /* Sections */
+  section { padding-block: clamp(72px, 11vh, 140px); }
+  section + section { border-top: 1px solid var(--paper-lo); }
+  h2 { font-size: clamp(2.6rem, 5vw, 4.5rem); max-width: 14ch; }
+  .sec-lede { margin-top: 18px; max-width: 40em; color: var(--ink-2); font-size: 1.125rem; }
+
+  /* Prints */
+  .prints { margin-top: clamp(40px, 6vh, 72px); display: grid; grid-template-columns: minmax(0, 32fr) minmax(0, 9fr); gap: clamp(20px, 3vw, 48px); align-items: end; }
+  .print { position: relative; background: var(--paper-hi); padding: clamp(8px, 1vw, 14px); box-shadow: 0 1px 1px rgba(0,0,0,.12), 0 24px 40px -22px rgba(0,0,0,.5); }
+  .print:first-child { transform: rotate(-.4deg); }
+  .print:last-child { transform: rotate(.8deg); }
+  .screen { position: relative; overflow: hidden; background: #0a0a0a; }
+  .screen.wide { aspect-ratio: 16 / 9; }
+  .screen.tall { aspect-ratio: 9 / 16; }
+  .screen iframe { position: absolute; left: 0; top: 0; border: 0; transform-origin: 0 0; pointer-events: none; }
+  .screen img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+  .crops { position: absolute; inset: -14px; width: calc(100% + 28px); height: calc(100% + 28px); overflow: visible; pointer-events: none; z-index: 2; }
+  .crops path { stroke-width: 3.5; }
+  .print figcaption { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 12px 4px 2px; }
+  .print figcaption .hand { font-size: clamp(1.15rem, 1.5vw, 1.45rem); }
+  .print figcaption small { font: 500 12px/1 var(--mono); color: var(--ink-2); }
+
+  .transport { margin-top: clamp(28px, 4vh, 44px); display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 0; background: var(--rebate); border-radius: 6px; overflow: hidden; }
+  .play { display: grid; place-items: center; width: 64px; height: 64px; border: 0; background: var(--grease); color: var(--paper-hi); cursor: pointer; transition: background .2s var(--ease-out); }
+  .play:hover { background: #a91f13; }
+  .play svg { width: 20px; height: 20px; }
+  .play svg[hidden] { display: none; }
+  .scrub { position: relative; height: 64px; cursor: ew-resize; touch-action: none; }
+  .scrub::before, .scrub::after { content: ""; position: absolute; left: 10px; right: 10px; height: 6px; background: repeating-linear-gradient(90deg, var(--hole) 0 8px, transparent 8px 16px); }
+  .scrub::before { top: 6px; } .scrub::after { bottom: 6px; }
+  .ticks { position: absolute; inset: 18px 10px; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); }
+  .ticks span { border-left: 1px solid #3c3c37; padding: 2px 0 0 5px; }
+  .head { position: absolute; top: 12px; bottom: 12px; width: 3px; margin-left: -1.5px; background: var(--edge); left: 10px; box-shadow: 0 0 0 3px rgba(240,163,50,.18); }
+  .tc { padding: 0 22px; font: 600 15px/1 var(--mono); color: var(--edge); font-feature-settings: "tnum"; white-space: nowrap; }
+  .scrub-hint { margin-top: 12px; font-size: 15px; color: var(--ink-2); }
+
+  /* Steps strip */
+  .steps { margin-top: clamp(40px, 6vh, 72px); background: var(--rebate); padding: 0 clamp(8px, 1vw, 14px); box-shadow: 0 14px 26px -16px rgba(0,0,0,.55); }
+  .steps::before, .steps::after { content: ""; display: block; height: 8px; margin-inline: 4px; background: repeating-linear-gradient(90deg, var(--hole) 0 10px, transparent 10px 21px); }
+  .steps::before { margin-top: 6px; } .steps::after { margin-bottom: 6px; }
+  .steps-scroll { overflow-x: auto; scrollbar-width: thin; }
+  .steps-scroll > div { min-width: 1080px; }
+  .steps .edge-row { column-gap: 7px; padding: 5px 2px; }
+  .steps ol { list-style: none; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 7px; padding-block: 0 4px; }
+  .steps li { background: #0b0b0b; color: var(--paper); padding: 16px 16px 20px; min-height: 230px; display: flex; flex-direction: column; gap: 10px; }
+  .steps h3 { font: 850 1.9rem/.95 var(--display); text-transform: uppercase; color: var(--paper-hi); }
+  .steps p { font-size: .95rem; line-height: 1.5; color: #b9b9b2; }
+
+  .code-pair { margin-top: clamp(36px, 5vh, 56px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(20px, 3vw, 44px); align-items: start; }
+  .code-pair pre { background: var(--rebate); color: var(--paper); padding: 22px 24px; border-radius: 6px; font: 400 14px/1.7 var(--mono); overflow-x: auto; box-shadow: 0 14px 26px -18px rgba(0,0,0,.6); }
+  .code-pair pre .k { color: var(--edge); }
+  .code-pair pre .c { color: #8d8a82; }
+  .code-pair figcaption { margin-top: 10px; font-size: 15px; color: var(--ink-2); }
+
+  /* Formats */
+  .formats { margin-top: clamp(40px, 6vh, 72px); display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(32px, 5vw, 80px); }
+  .format h3 { font: 850 clamp(2rem, 3.2vw, 2.8rem)/.95 var(--display); text-transform: uppercase; }
+  .format > p { margin-top: 12px; color: var(--ink-2); max-width: 36em; }
+  .spec { margin-top: 22px; display: grid; grid-template-columns: max-content 1fr; border-top: 2px solid var(--ink); }
+  .spec dt, .spec dd { padding: 11px 0; border-bottom: 1px solid var(--paper-lo); }
+  .spec dt { font: 600 .98rem/1.6 var(--body); padding-right: 28px; }
+  .format .strip { margin-top: 26px; }
+  .format .edge-row { display: flex; justify-content: space-between; }
+  .format .edge-row span { gap: 7px; }
+  .mini-frames { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 5px; }
+  .mini-frames img { display: block; width: 100%; height: auto; aspect-ratio: 9 / 16; object-fit: cover; }
+  .mini-frames.wide { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .mini-frames.wide img { aspect-ratio: 16 / 9; }
+
+  /* Craft bar */
+  .qa { margin-top: clamp(36px, 5vh, 60px); }
+  .qa .strip { transform: rotate(-.3deg); }
+  .qa .frame { cursor: default; }
+  .tick { position: absolute; right: var(--x, 5%); bottom: var(--y, 5%); width: var(--w, 22%); height: auto; overflow: visible; transform: rotate(var(--r, 0deg)); }
+  .tick path { stroke-width: 5; }
+  .qa-notes { list-style: none; display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: clamp(3px, .5vw, 7px); padding: 14px clamp(6px, .8vw, 12px) 0; }
+  .qa-notes li { font-size: clamp(1.1rem, 1.35vw, 1.3rem); transform: rotate(-1.5deg); }
+
+  /* Close */
+  .close { padding-bottom: clamp(64px, 10vh, 120px); }
+  .close-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(32px, 5vw, 80px); align-items: center; }
+  .close h2 { max-width: 16ch; }
+  .close .install { margin-top: 32px; max-width: 640px; }
+  .needs { margin-top: 22px; color: var(--ink-2); max-width: 40em; }
+  .ko { margin-top: 18px; color: var(--ink-2); font-size: 1rem; max-width: 40em; word-break: keep-all; }
+  .wrap-print { transform: rotate(1.2deg); }
+  .wrap-print img { display: block; width: 100%; height: auto; }
+  .leader { background: var(--rebate); padding-inline: var(--gutter); }
+  .leader::before, .leader::after { content: ""; display: block; height: 8px; background: repeating-linear-gradient(90deg, var(--hole) 0 10px, transparent 10px 21px); }
+  .leader::before { margin-top: 6px; } .leader::after { margin-bottom: 6px; }
+  .foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 24px; padding-block: 12px; }
+  .foot a { color: var(--edge); text-decoration: none; }
+  .foot a:hover { text-decoration: underline; }
+
+  /* Motion: content is visible by default; .anim only enhances. */
+  .anim .strip { animation: advance 1.1s var(--ease-out) both; animation-delay: calc(var(--i) * 90ms); }
+  @keyframes advance { from { translate: -6% 0; opacity: .0; } }
+  .draw path { stroke-dasharray: 1; stroke-dashoffset: 0; }
+  .anim .draw.on path { animation: draw 1.1s var(--ease-out) var(--delay, 0s) both; }
+  @keyframes draw { from { stroke-dashoffset: 1; } }
+  @media (prefers-reduced-motion: reduce) {
+    .anim .strip, .anim .draw.on path { animation: none; }
+  }
+
+  /* Responsive */
+  @media (max-width: 1100px) {
+    .hero { grid-template-columns: minmax(0, 1fr); }
+    .hero-copy { order: -1; display: flex; flex-direction: column; }
+    .note-hero { position: static; order: 9; margin-top: 26px; width: auto; transform: rotate(-2deg); }
+    .note-hero svg { display: none; }
+    .sheet { margin-top: 44px; }
+    .close-grid { grid-template-columns: minmax(0, 1fr); }
+    .wrap-print { width: min(520px, 100%); }
+  }
+  @media (max-width: 760px) {
+    .top nav a:not(:last-child) { display: none; }
+    .prints { grid-template-columns: minmax(0, 1fr); }
+    .prints .print:last-child { width: min(260px, 70%); justify-self: center; }
+    .code-pair, .formats { grid-template-columns: minmax(0, 1fr); }
+    .qa .frames, .qa-notes { grid-template-columns: repeat(3, minmax(0, 1fr)); row-gap: 7px; }
+    .qa .edge-row { display: none; }
+    .edge { font-size: 11px; letter-spacing: .08em; }
+    .sheet .edge-row > span:nth-child(even) { visibility: hidden; }
+    .steps .edge, .foot.edge { font-size: 12px; }
+    .tc { padding: 0 12px; font-size: 13px; }
+    .play { width: 52px; height: 52px; }
+    .scrub { height: 52px; }
+    .ticks span:nth-child(odd) { color: transparent; }
+  }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <filter id="wax" x="-10%" y="-10%" width="120%" height="120%">
+    <feTurbulence type="fractalNoise" baseFrequency="1.4" numOctaves="2" seed="7" result="n"/>
+    <feDisplacementMap in="SourceGraphic" in2="n" scale="2.6"/>
+  </filter>
+</svg>
+
+<header class="wrap top">
+  <a class="mark" href="#">
+    <svg viewBox="0 0 64 64" aria-hidden="true"><rect width="64" height="64" rx="10" fill="#131313"/><rect x="6" y="16" width="52" height="32" rx="3" fill="#e9e9e4"/><circle cx="38" cy="32" r="9" fill="#c8271a"/></svg>
+    motion-graphics
+  </a>
+  <nav aria-label="Primary">
+    <a href="#prints">Demos</a>
+    <a href="#how">How it works</a>
+    <a href="https://github.com/cskwork/motion-graphics-skill">GitHub</a>
+  </nav>
+</header>
+
+<main>
+  <div class="wrap hero">
+    <div class="sheet" id="sheet" role="group" aria-label="Contact sheet: 24 frames of the launch demo, rendered by the skill's engine every half second. Point at a frame to play it in the loupe.">
+      <div class="sheet-ctl"><button class="pill" type="button" data-toggle aria-pressed="true"><svg viewBox="0 0 12 12" aria-hidden="true"><rect x="2" y="1.5" width="2.6" height="9" fill="currentColor"/><rect x="7.4" y="1.5" width="2.6" height="9" fill="currentColor"/></svg><span>Pause</span></button></div>
+    </div>
+    <div class="hero-copy">
+      <p class="hand note note-hero">every frame on this sheet was rendered by the skill
+        <svg class="draw arrow" viewBox="0 0 180 90" aria-hidden="true" style="--delay:.9s"><path pathLength="1" stroke-width="3.5" d="M176,82 C130,86 60,64 10,12 M10,12 L28,14 M10,12 L12,30"/></svg>
+      </p>
+      <h1 class="display">Motion graphics, <em>written as code.</em></h1>
+      <p class="lede">An agent skill that turns <strong>your running app</strong> into a launch video, or <strong>an idea</strong> into a YouTube Short, one HTML frame at a time.</p>
+      <div class="install">
+        <code id="cmd"><span>npx</span> skills@latest add cskwork/motion-graphics-skill</code>
+        <button class="copy" type="button" data-copy="npx skills@latest add cskwork/motion-graphics-skill" aria-label="Copy install command">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="9" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Copy</span>
+        </button>
+      </div>
+      <p class="agents">For Claude Code, Codex, and any agent that reads SKILL.md. <a href="https://github.com/cskwork/motion-graphics-skill/blob/main/skills/motion-graphics/SKILL.md">Read the skill</a></p>
+    </div>
+  </div>
+
+  <section id="prints">
+    <div class="wrap">
+      <h2 class="display">Two prints, one engine.</h2>
+      <p class="sec-lede">Both demos below are the skill's own compositions, playing live in your browser on the runtime it installs. Drag the strip: the same t always gives the same frame.</p>
+      <div class="prints">
+        <figure class="print">
+          <svg class="crops draw" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true" style="--delay:.2s"><path pathLength="1" vector-effect="non-scaling-stroke" d="M0,7 L0,0 L4,0 M96,0 L100,0 L100,7 M100,93 L100,100 L96,100 M4,100 L0,100 L0,93"/></svg>
+          <div class="screen wide" data-screen data-w="1920" data-h="1080">
+            <img src="assets/frames/launch-poster.webp" alt="Launch video demo: the words Launch videos, written as code." width="1600" height="900" loading="lazy">
+            <iframe data-src="demo/launch.html" title="Launch video demo, rendered live" tabindex="-1" loading="lazy" width="1920" height="1080"></iframe>
+          </div>
+          <figcaption><span class="hand">Launch video</span><small>1920×1080 · 60 fps · 12 s demo</small></figcaption>
+        </figure>
+        <figure class="print">
+          <div class="screen tall" data-screen data-w="1080" data-h="1920">
+            <img src="assets/frames/shorts-poster.webp" alt="Shorts demo: the number 720 over the word screenshots." width="720" height="1280" loading="lazy">
+            <iframe data-src="demo/shorts.html" title="Shorts demo, rendered live" tabindex="-1" loading="lazy" width="1080" height="1920"></iframe>
+          </div>
+          <figcaption><span class="hand">Short</span><small>1080×1920</small></figcaption>
+        </figure>
+      </div>
+      <div class="transport">
+        <button class="play" type="button" data-toggle aria-pressed="true" aria-label="Pause the demos">
+          <svg viewBox="0 0 20 20" aria-hidden="true" data-icon-pause><rect x="4" y="3" width="4.4" height="14" fill="currentColor"/><rect x="11.6" y="3" width="4.4" height="14" fill="currentColor"/></svg>
+          <svg viewBox="0 0 20 20" aria-hidden="true" data-icon-play hidden><path d="M5 3l12 7-12 7z" fill="currentColor"/></svg>
+        </button>
+        <div class="scrub" id="scrub" role="slider" tabindex="0" aria-label="Demo time" aria-valuemin="0" aria-valuemax="12" aria-valuenow="0" aria-valuetext="0.00 seconds">
+          <div class="ticks edge" aria-hidden="true"></div>
+          <div class="head" id="head"></div>
+        </div>
+        <div class="tc" id="tc" aria-hidden="true">00:00:00:00</div>
+      </div>
+      <p class="scrub-hint">Arrow keys step one frame at 60 fps when the strip has focus.</p>
+    </div>
+  </section>
+
+  <section id="how">
+    <div class="wrap">
+      <h2 class="display">From brief to MP4, in six frames.</h2>
+      <p class="sec-lede">The skill walks the agent through the same steps a motion designer takes, and checks the result before calling it done.</p>
+      <div class="steps-scroll"><div class="steps">
+        <div class="edge-row edge" aria-hidden="true"><span><i class="tri"></i>1</span><span><i class="tri"></i>2</span><span><i class="tri"></i>3</span><span><i class="tri"></i>4</span><span><i class="tri"></i>5</span><span><i class="tri"></i>6</span></div>
+        <ol>
+          <li><h3>Brief</h3><p>Surface, length, frame, audio. Launch videos default to 30&nbsp;s at 1920×1080; Shorts to 20–30&nbsp;s at 1080×1920.</p></li>
+          <li><h3>Capture</h3><p>Real stills and clips from the running app: iOS Simulator, Android emulator, web, or macOS. Only captured UI appears.</p></li>
+          <li><h3>Beat sheet</h3><p>Every second planned before code: copy, asset, move, transition, and the sound that lands on it.</p></li>
+          <li><h3>Compose</h3><p>One HTML page. Scenes, springs, kinetic type, and screen recordings that seek to the exact frame.</p></li>
+          <li><h3>Render</h3><p>Headless Chromium steps through every frame in parallel workers; ffmpeg encodes H.264.</p></li>
+          <li><h3>QA</h3><p>Stills at every beat, a contact sheet, safe zones, loudness. Fix, then render again.</p></li>
+        </ol>
+      </div></div>
+      <div class="code-pair">
+        <figure>
+<pre><code><span class="k">MG.scene</span>(0, 2.4, (t) =&gt; {
+  <span class="c">// t is the only input. No clock, no Math.random.</span>
+  <span class="k">MG.set</span>(title, {
+    y: (1 - MG.spring(t)) * 170,
+    o: MG.prog(t, 0, 0.12),
+  });
+}, title);
+<span class="k">MG.ready</span>();</code></pre>
+          <figcaption>A scene in <code>motion.html</code>. The renderer calls it once per frame.</figcaption>
+        </figure>
+        <figure>
+<pre><code><span class="c"># one still per beat, to check the layout</span>
+node engine/render.mjs --html motion.html \
+  --config motion.json --stills 0.4,3.2,6.8 \
+  --stills-dir out/stills
+
+<span class="c"># the full render</span>
+node engine/render.mjs --html motion.html \
+  --config motion.json --out out/video.mp4</code></pre>
+          <figcaption>The bundled renderer. Same input, same pixels, every run.</figcaption>
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section id="formats">
+    <div class="wrap">
+      <h2 class="display">Two formats.</h2>
+      <div class="formats">
+        <div class="format">
+          <h3>Launch video</h3>
+          <p>The keynote-style launch you see on X, built from captures of your real app, never from invented screens.</p>
+          <dl class="spec">
+            <dt>Length</dt><dd>30 s, scaled to your brief</dd>
+            <dt>Frame</dt><dd>1920×1080 at 60 fps; square or vertical on request</dd>
+            <dt>Source</dt><dd>iOS Simulator, Android emulator, web, or macOS</dd>
+            <dt>Look</dt><dd>Taken from your icon, colour tokens, and type</dd>
+            <dt>Beats</dt><dd>Hook, promise, 3–4 features, montage, lockup</dd>
+          </dl>
+          <div class="strip" aria-hidden="true">
+            <div class="edge-row edge"><span><i class="tri"></i>Launch 1920×1080</span><span>t 4.3s</span><span>t 9.6s</span></div>
+            <div class="mini-frames wide">
+              <img src="assets/frames/launch-11.webp" alt="" loading="lazy" width="480" height="270">
+              <img src="assets/frames/launch-21.webp" alt="" loading="lazy" width="480" height="270">
+            </div>
+            <div class="edge-row edge"><span>MG·60</span><span><i class="tri"></i>11</span><span><i class="tri"></i>21</span></div>
+          </div>
+        </div>
+        <div class="format">
+          <h3>Shorts</h3>
+          <p>Vertical explainers for YouTube Shorts, Reels, and TikTok, with the hook on screen in the first 0.3 seconds.</p>
+          <dl class="spec">
+            <dt>Length</dt><dd>20–30 s</dd>
+            <dt>Frame</dt><dd>1080×1920 at 60 fps</dd>
+            <dt>Rules</dt><dd>One idea per beat, text clear of the platform's UI</dd>
+            <dt>Facts</dt><dd>Every number on screen has a source</dd>
+            <dt>Ending</dt><dd>The last frame matches the first, so it loops</dd>
+          </dl>
+          <div class="strip" aria-hidden="true">
+            <div class="edge-row edge"><span><i class="tri"></i>Short 1080×1920</span><span>t 0.9 – 10.4s</span></div>
+            <div class="mini-frames">
+              <img src="assets/frames/shorts-01.webp" alt="" loading="lazy" width="360" height="640">
+              <img src="assets/frames/shorts-02.webp" alt="" loading="lazy" width="360" height="640">
+              <img src="assets/frames/shorts-03.webp" alt="" loading="lazy" width="360" height="640">
+              <img src="assets/frames/shorts-04.webp" alt="" loading="lazy" width="360" height="640">
+              <img src="assets/frames/shorts-05.webp" alt="" loading="lazy" width="360" height="640">
+              <img src="assets/frames/shorts-06.webp" alt="" loading="lazy" width="360" height="640">
+            </div>
+            <div class="edge-row edge"><span>MG·60</span><span>6 frames</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="craft">
+    <div class="wrap">
+      <h2 class="display">The bar it holds every video to.</h2>
+      <p class="sec-lede">The skill's own QA pass, marked up the way an editor marks a proof.</p>
+      <div class="qa">
+        <div class="strip" aria-hidden="true">
+          <div class="edge-row edge"><span><i class="tri"></i>QA 1</span><span><i class="tri"></i>QA 2</span><span><i class="tri"></i>QA 3</span><span><i class="tri"></i>QA 4</span><span><i class="tri"></i>QA 5</span><span><i class="tri"></i>QA 6</span></div>
+          <div class="frames"><figure class="frame"><img src="assets/frames/launch-01.webp" alt="" width="480" height="270" loading="lazy"><svg class="tick draw" viewBox="0 0 36 30" aria-hidden="true" style="--delay:0.00s;--x:6%;--y:6%;--w:22%;--r:-6deg"><path pathLength="1" d="M3,16 L13,26 L33,3"/></svg></figure><figure class="frame"><img src="assets/frames/launch-05.webp" alt="" width="480" height="270" loading="lazy"><svg class="tick draw" viewBox="0 0 36 30" aria-hidden="true" style="--delay:0.12s;--x:4%;--y:5%;--w:18%;--r:4deg"><path pathLength="1" d="M2,14 C6,17 9,22 12,27 C17,17 24,8 34,2"/></svg></figure><figure class="frame"><img src="assets/frames/launch-15.webp" alt="" width="480" height="270" loading="lazy"><svg class="tick draw" viewBox="0 0 36 30" aria-hidden="true" style="--delay:0.24s;--x:8%;--y:7%;--w:24%;--r:-2deg"><path pathLength="1" d="M4,18 L12,25 C18,15 26,7 33,4"/></svg></figure><figure class="frame"><img src="assets/frames/launch-11.webp" alt="" width="480" height="270" loading="lazy"><svg class="tick draw" viewBox="0 0 36 30" aria-hidden="true" style="--delay:0.36s;--x:5%;--y:6%;--w:20%;--r:9deg"><path pathLength="1" d="M2,15 C7,19 10,23 13,26 L31,5"/></svg></figure><figure class="frame"><img src="assets/frames/launch-21.webp" alt="" width="480" height="270" loading="lazy"><svg class="tick draw" viewBox="0 0 36 30" aria-hidden="true" style="--delay:0.48s;--x:7%;--y:4%;--w:23%;--r:-10deg"><path pathLength="1" d="M3,17 L11,27 C16,18 22,10 34,1"/></svg></figure><figure class="frame"><img src="assets/frames/launch-24.webp" alt="" width="480" height="270" loading="lazy"><svg class="tick draw" viewBox="0 0 36 30" aria-hidden="true" style="--delay:0.60s;--x:4%;--y:5%;--w:19%;--r:3deg"><path pathLength="1" d="M4,14 C8,18 11,22 13,26 C18,16 26,8 33,3"/></svg></figure></div>
+          <div class="edge-row edge"><span>MG·60</span><span>MG·60</span><span>MG·60</span><span>MG·60</span><span>MG·60</span><span>MG·60</span></div>
+        </div>
+        <ol class="qa-notes"><li class="hand">frame 0 is already moving</li><li class="hand">something changes every 0.8–2 s</li><li class="hand">springs and ease-out, never linear</li><li class="hand">copy stays up long enough to read twice</li><li class="hand">real captures, licensed sound, sourced facts</li><li class="hand">stills and a contact sheet checked, then render again</li></ol>
+      </div>
+    </div>
+  </section>
+
+  <section class="close" id="install">
+    <div class="wrap close-grid">
+      <div>
+        <h2 class="display">Install it, then ask for a video.</h2>
+        <div class="install">
+          <code><span>npx</span> skills@latest add cskwork/motion-graphics-skill</code>
+          <button class="copy" type="button" data-copy="npx skills@latest add cskwork/motion-graphics-skill" aria-label="Copy install command">
+            <svg viewBox="0 0 16 16" aria-hidden="true"><rect x="5" y="5" width="9" height="9" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M11 5V3.5A1.5 1.5 0 0 0 9.5 2h-6A1.5 1.5 0 0 0 2 3.5v6A1.5 1.5 0 0 0 3.5 11H5" fill="none" stroke="currentColor" stroke-width="1.6"/></svg><span>Copy</span>
+          </button>
+        </div>
+        <p class="needs">Needs Node.js 18+, ffmpeg, and Playwright's Chromium; the skill installs Playwright in each video's work folder. Then ask in plain words: “Make a launch video for our app from the iOS simulator,” or “Make a YouTube Short explaining compound interest.” Also part of <a href="https://cskwork.github.io/skills/">cskwork/skills</a>.</p>
+        <p class="ko" lang="ko">한국어: 실행 중인 앱 화면으로 출시 영상을, 아이디어 하나로 Shorts를 만드는 에이전트 스킬입니다. 모든 장면은 시간 t에 따라 HTML로 그려지고, 같은 t는 언제나 같은 장면을 만듭니다.</p>
+      </div>
+      <figure class="print wrap-print">
+        <svg class="crops draw" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path pathLength="1" vector-effect="non-scaling-stroke" d="M0,7 L0,0 L4,0 M96,0 L100,0 L100,7 M100,93 L100,100 L96,100 M4,100 L0,100 L0,93"/></svg>
+        <img src="assets/frames/launch-24.webp" alt="The last frame of the launch demo: the motion-graphics wordmark and its install command." width="480" height="270" loading="lazy">
+        <figcaption><span class="hand">that's a wrap</span><small>t 11.6s</small></figcaption>
+      </figure>
+    </div>
+  </section>
+</main>
+<footer class="leader">
+  <div class="foot edge">
+    <span><i class="tri"></i> MIT · cskwork</span>
+    <span><a href="https://github.com/cskwork/motion-graphics-skill">GitHub</a> · <a href="https://github.com/cskwork/motion-graphics-skill/blob/main/skills/motion-graphics/SKILL.md">SKILL.md</a> · <a href="https://cskwork.github.io/skills/">cskwork/skills</a></span>
+  </div>
+</footer>
+
+<script>
+(() => {
+  const DUR = 12, FPS = 60;
+  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const pad = (n) => String(n).padStart(2, "0");
+  const tcode = (t) => `00:00:${pad(Math.floor(t))}:${pad(Math.floor(t * FPS) % FPS)}`;
+  document.documentElement.classList.add("anim");
+
+  // Contact sheet: four strips of six real renders, sampled across every beat.
+  const sheet = $("#sheet");
+  const TIMES = [0.05, 0.15, 0.3, 0.5, 0.8, 2.3, 2.55, 2.85, 3.2, 3.7, 4.3, 5, 5.3, 5.7, 6.3, 7, 7.8, 8.3, 8.55, 9, 9.6, 10.2, 11, 11.6];
+  const KEEP = 22, PARK = KEEP;
+  for (let s = 0; s < 4; s++) {
+    const strip = document.createElement("div");
+    strip.className = "strip";
+    strip.style.setProperty("--tilt", ["-.5deg", ".35deg", "-.2deg", ".55deg"][s]);
+    strip.style.setProperty("--i", s);
+    const top = `<div class="edge-row edge" aria-hidden="true">${[0,1,2,3,4,5].map((k) => `<span><i class="tri"></i>${s * 6 + k + 1}</span>`).join("")}</div>`;
+    let frames = '<div class="frames">';
+    for (let k = 0; k < 6; k++) {
+      const i = s * 6 + k, t = TIMES[i];
+      frames += `<figure class="frame" data-t="${t}" tabindex="0" aria-label="Frame at ${t} seconds"><img src="assets/frames/launch-${pad(i + 1)}.webp" alt="" width="480" height="270"></figure>`;
+    }
+    frames += "</div>";
+    const bottom = `<div class="edge-row edge" aria-hidden="true">${[0,1,2,3,4,5].map((k) => `<span>t ${TIMES[s * 6 + k].toFixed(2)}s</span>`).join("")}</div>`;
+    strip.innerHTML = top + frames + bottom;
+    sheet.appendChild(strip);
+  }
+  const loupe = document.createElement("div");
+  loupe.className = "loupe";
+  loupe.setAttribute("aria-hidden", "true");
+  loupe.innerHTML = '<div class="lens"><iframe data-src="demo/launch.html" title="Loupe: launch demo" tabindex="-1" width="1920" height="1080"></iframe></div><span class="edge" data-readout>t 1.5s</span>';
+  sheet.appendChild(loupe);
+  const keeper = document.createElement("div");
+  keeper.className = "keeper";
+  keeper.setAttribute("aria-hidden", "true");
+  keeper.innerHTML = '<svg class="draw" viewBox="0 0 200 200" style="--delay:1.1s"><path pathLength="1" stroke-width="5" d="M30,112 C18,58 64,16 112,18 C164,20 192,62 184,110 C176,160 132,188 88,182 C42,176 14,140 22,96 C26,72 46,48 72,36"/></svg><span class="hand">keeper</span>';
+  sheet.appendChild(keeper);
+
+  // Clock shared by every live composition.
+  const state = { playing: !reduce, t: reduce ? 1.6 : 0, loupeBase: TIMES[PARK], loupeClock: reduce ? 0.6 : 0, parked: true };
+  const live = [];
+  const attach = (iframe, getT, w, h, box) => {
+    const entry = { iframe, getT, w, h, box, win: null, visible: true, last: -1 };
+    iframe.addEventListener("load", () => {
+      try { entry.win = iframe.contentWindow; void entry.win.document; }
+      catch { entry.win = null; }
+      if (!entry.win || !entry.win.renderAt) {
+        // file:// or cross-origin: let the composition run its own clock.
+        if (!iframe.src.includes("play=1")) iframe.src = iframe.dataset.src + "?play=1";
+        entry.win = null;
+      }
+      iframe.previousElementSibling?.tagName === "IMG" && (iframe.previousElementSibling.style.visibility = "hidden");
+    });
+    iframe.src = iframe.dataset.src;
+    if ("IntersectionObserver" in window) new IntersectionObserver(([e]) => (entry.visible = e.isIntersecting)).observe(box);
+    live.push(entry);
+    return entry;
+  };
+  const fit = (entry, cover) => {
+    const r = entry.box.getBoundingClientRect();
+    const k = cover ? Math.max(r.width / entry.w, r.height / entry.h) : r.width / entry.w;
+    entry.iframe.style.transform = `translate(${(r.width - entry.w * k) / 2}px, ${(r.height - entry.h * k) / 2}px) scale(${k})`;
+  };
+
+  $$("[data-screen]").forEach((box) => {
+    const e = attach($("iframe", box), () => state.t, +box.dataset.w, +box.dataset.h, box);
+    new ResizeObserver(() => fit(e, false)).observe(box);
+  });
+  // Parked on the keeper, the loupe loops the lockup beat; elsewhere it plays on from the frame under it.
+  const LOCK = [10.45, 1.55];
+  const lensTime = () => state.parked ? LOCK[0] + (state.loupeClock % LOCK[1]) : (state.loupeBase + state.loupeClock) % DUR;
+  const lensEntry = attach($("iframe", loupe), lensTime, 1920, 1080, $(".lens", loupe));
+  new ResizeObserver(() => fit(lensEntry, true)).observe($(".lens", loupe));
+
+  // Loupe: parks on a frame, follows the pointer, plays from the frame under it.
+  const readout = $("[data-readout]", loupe);
+  const frames = $$(".frame", sheet);
+  const pos = { x: 0, y: 0, tx: 0, ty: 0, init: false };
+  const target = (el) => {
+    const s = sheet.getBoundingClientRect(), r = el.getBoundingClientRect(), d = loupe.offsetWidth;
+    pos.tx = r.left - s.left + r.width / 2 - d / 2;
+    pos.ty = r.top - s.top + r.height / 2 - d / 2;
+  };
+  const pick = (el) => {
+    const t = +el.dataset.t;
+    if (state.parked || t !== state.loupeBase) { state.loupeBase = t; state.loupeClock = 0; }
+    state.parked = false;
+    target(el);
+  };
+  frames.forEach((f) => {
+    f.addEventListener("pointerenter", () => pick(f));
+    f.addEventListener("focus", () => pick(f));
+    f.addEventListener("click", () => pick(f));
+  });
+  sheet.addEventListener("pointermove", (e) => {
+    if (e.pointerType !== "mouse") return;
+    const s = sheet.getBoundingClientRect(), d = loupe.offsetWidth;
+    pos.tx = e.clientX - s.left - d / 2;
+    pos.ty = e.clientY - s.top - d / 2;
+  });
+  const park = () => { if (!state.parked) { state.parked = true; state.loupeClock = 0; } target(frames[PARK]); };
+  const placeKeeper = () => {
+    const s = sheet.getBoundingClientRect(), r = frames[KEEP].getBoundingClientRect(), d = keeper.offsetWidth;
+    keeper.style.transform = `translate(${r.left - s.left + r.width / 2 - d / 2}px, ${r.top - s.top + r.height / 2 - d / 2}px)`;
+  };
+  sheet.addEventListener("pointerleave", park);
+  new ResizeObserver(() => { park(); placeKeeper(); pos.x = pos.tx; pos.y = pos.ty; }).observe(sheet);
+
+  // Play / pause, everywhere at once.
+  const toggles = $$("[data-toggle]");
+  const setPlaying = (on) => {
+    state.playing = on;
+    toggles.forEach((b) => {
+      b.setAttribute("aria-pressed", String(on));
+      const label = $("span", b);
+      if (label) label.textContent = on ? "Pause" : "Play";
+      if (b.classList.contains("play")) {
+        b.setAttribute("aria-label", on ? "Pause the demos" : "Play the demos");
+        $("[data-icon-pause]", b).hidden = !on;
+        $("[data-icon-play]", b).hidden = on;
+      }
+    });
+  };
+  toggles.forEach((b) => b.addEventListener("click", () => setPlaying(!state.playing)));
+  setPlaying(state.playing);
+
+  // Scrub strip.
+  const scrub = $("#scrub"), head = $("#head"), tc = $("#tc");
+  $(".ticks", scrub).innerHTML = [...Array(12)].map((_, i) => `<span>${i}s</span>`).join("");
+  const seek = (clientX) => {
+    const r = scrub.getBoundingClientRect();
+    state.t = Math.min(DUR - 1 / FPS, Math.max(0, ((clientX - r.left - 10) / (r.width - 20)) * DUR));
+  };
+  scrub.addEventListener("pointerdown", (e) => {
+    scrub.setPointerCapture(e.pointerId);
+    state.wasPlaying = state.playing; setPlaying(false); seek(e.clientX);
+    const move = (ev) => seek(ev.clientX);
+    const up = () => { scrub.removeEventListener("pointermove", move); scrub.removeEventListener("pointerup", up); };
+    scrub.addEventListener("pointermove", move);
+    scrub.addEventListener("pointerup", up);
+  });
+  scrub.addEventListener("keydown", (e) => {
+    const step = e.shiftKey ? 1 : 1 / FPS;
+    if (e.key === "ArrowRight") state.t = Math.min(DUR - 1 / FPS, state.t + step);
+    else if (e.key === "ArrowLeft") state.t = Math.max(0, state.t - step);
+    else if (e.key === "Home") state.t = 0;
+    else if (e.key === " ") setPlaying(!state.playing);
+    else return;
+    e.preventDefault();
+    if (e.key !== " ") setPlaying(false);
+  });
+
+  // Copy buttons.
+  $$("[data-copy]").forEach((b) => b.addEventListener("click", async () => {
+    const label = $("span", b);
+    try { await navigator.clipboard.writeText(b.dataset.copy); label.textContent = "Copied"; b.dataset.done = ""; }
+    catch { label.textContent = "Select it"; }
+    setTimeout(() => { label.textContent = "Copy"; delete b.dataset.done; }, 1800);
+  }));
+
+  // Grease-pencil marks draw on when they enter the view.
+  // Marks are visible by default; entering the view replays them as a draw-on.
+  const drawIO = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && (e.target.classList.add("on"), drawIO.unobserve(e.target))), { threshold: 0 });
+  const watchDraw = () => $$(".draw:not(.on)").forEach((d) => drawIO.observe(d));
+  watchDraw();
+
+  let prev = null;
+  const frame = (now) => {
+    const dt = prev === null ? 0 : Math.min(0.1, (now - prev) / 1000);
+    prev = now;
+    if (state.playing) { state.t = (state.t + dt) % DUR; state.loupeClock += dt; }
+    if (!pos.init) { pos.x = pos.tx; pos.y = pos.ty; pos.init = true; }
+    const k = reduce ? 1 : 1 - Math.pow(0.0008, dt);
+    pos.x += (pos.tx - pos.x) * k; pos.y += (pos.ty - pos.y) * k;
+    loupe.style.transform = `translate3d(${pos.x}px, ${pos.y}px, 0)`;
+    const lt = lensTime();
+    readout.textContent = `t ${lt.toFixed(2)}s`;
+    for (const e of live) {
+      if (!e.win || !e.visible || !e.win.__mgReady) continue;
+      const t = e.getT();
+      if (t !== e.last) { e.win.renderAt(t); e.last = t; }
+    }
+    head.style.left = `calc(10px + (100% - 20px) * ${state.t / DUR})`;
+    tc.textContent = tcode(state.t);
+    scrub.setAttribute("aria-valuenow", state.t.toFixed(2));
+    scrub.setAttribute("aria-valuetext", `${state.t.toFixed(2)} seconds`);
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>

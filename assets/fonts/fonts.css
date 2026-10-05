@@ -1,0 +1,4 @@
+@font-face { font-family: "Sofia Sans Extra Condensed"; src: url("sofia-sans-extra-condensed.woff2") format("woff2"); font-weight: 500 900; font-display: block; }
+@font-face { font-family: "Sofia Sans"; src: url("sofia-sans.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: "JetBrains Mono"; src: url("jetbrains-mono.woff2") format("woff2"); font-weight: 400 700; font-display: swap; }
+@font-face { font-family: "Covered By Your Grace"; src: url("covered-by-your-grace.woff2") format("woff2"); font-display: block; }
